@@ -106,12 +106,15 @@ class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
             fiscal_position_id=po.partner_id.property_account_position.id,
             date_planned=item.line_id.date_required,
             name=False, price_unit=False, state='draft')['value']
+        # If no product_id, date_planned won't be prepared, use today instead
         vals.update({
             'order_id': po.id,
             'product_id': product.id,
             'account_analytic_id': item.line_id.analytic_account_id.id,
             'taxes_id': [(6, 0, vals.get('taxes_id', []))],
             'purchase_request_lines': [(4, item.line_id.id)],
+            'date_planned': (vals.get('date_planned') or
+                             item.line_id.date_required)
         })
         if item.line_id.procurement_id:
             vals['procurement_ids'] = [(4, item.line_id.procurement_id.id)]
@@ -125,9 +128,10 @@ class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
                            ('product_id', '=', item.product_id.id or False),
                            ('product_uom', '=', vals['product_uom']),
                            ('account_analytic_id', '=',
-                            item.line_id.analytic_account_id.id or False),]
+                            item.line_id.analytic_account_id.id or False),
+                           ]
         if not item.product_id:
-            order_line_data['name'] = item.name
+            order_line_data.append(('name', '=', item.name))
         if not item.line_id.procurement_id and \
                 item.line_id.procurement_id.location_id:
             order_line_data['location_id'] = \
@@ -176,7 +180,7 @@ class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
                 picking_type = line_picking_type
 
             line_location = line.procurement_id and \
-                            line.procurement_id.location_id or False
+                line.procurement_id.location_id or False
 
             if location is not False and line_location != location:
                 raise exceptions.Warning(
@@ -184,6 +188,13 @@ class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
                       'from the same procurement location.'))
             else:
                 location = line_location
+
+            # TODO: Please review
+            # kittiu: Error will be raised if no location,
+            #         this occur if use purchse_request to create order
+            #         should we use location from picking type?
+            if not location:
+                location = picking_type.default_location_dest_id
 
             if self.purchase_order_id:
                 purchase = self.purchase_order_id
