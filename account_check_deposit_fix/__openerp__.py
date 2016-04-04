@@ -35,8 +35,9 @@
 Fix for Account Check Deposit
 =============================
 
-Standard "Account Check Deposit" will use account in Company config to post counterpart move line.
-This fix will instead use the account from selected Bank.
+Standard "Account Check Deposit" will use account in Company config
+to post counterpart move line. This fix will instead use the account
+from selected Bank.
 
     """,
     'depends': [
