@@ -60,7 +60,7 @@ class PurchaseRequest(models.Model):
                                      ('warehouse_id', '=', False)])
         return types[:1]
 
-    @api.multi
+    @api.one
     @api.depends('name', 'origin', 'date_start',
                  'requested_by', 'assigned_to', 'description', 'company_id',
                  'line_ids', 'picking_type_id')
