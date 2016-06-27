@@ -1,22 +1,40 @@
 # -*- coding: utf-8 -*-
-# © <YEAR(S)> <AUTHOR(S)>
-# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
+###############################################################################
+#
+#    OpenERP, Open Source Management Solution
+#    This module copyright (C) 2014 Savoir-faire Linux
+#    (<http://www.savoirfairelinux.com>).
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+###############################################################################
+
 {
-    "name": "Account Voucher No Auto Lines",
-    "summary": "No more refresh lines when change amount in Account Voucher",
-    "version": "8.0.1.0.0",
-    "category": "Accounting & Finance",
-    "website": "http://www.savoirfairelinux.com",
-    "author": """
-    Joao Alfredo Gama Batista, Kitti U., Odoo Community Association (OCA)
-    """,
-    "license": "AGPL-3",
-    "application": False,
-    "installable": True,
-    "depends": [
-        "account_voucher",
+    'name': 'Account Voucher No Auto Lines',
+    'version': '8.0.1.0.0',
+    'category': 'Accounting & Finance',
+    'author': 'Savoir-faire Linux, Odoo Community Association (OCA)',
+    'website': 'http://www.savoirfairelinux.com',
+    'license': 'AGPL-3',
+    'depends': [
+        'account_voucher',
     ],
-    "data": [
-        "views/account_voucher_view.xml",
+    'data': [
+        'views/account_voucher.xml',
+        'views/account_config.xml',
     ],
+    'images': [],
+    'installable': True,
+    'auto_install': False,
 }

@@ -20,142 +20,159 @@
 #
 ###############################################################################
 
-from openerp import models
-
-
-def copy_lines(context=None):
-
-    line_dr_ids = {
-        line[2]['move_line_id']: {
-            'amount': line[2]['amount'],
-            'type': line[2]['type'],
-            'reconcile': line[2]['reconcile']
-        }
-        for line in context.get('line_dr_ids', [])
-        if line[2] and line[2]['amount'] and
-        line[2].get('type', False) == 'dr'
-    }
-
-    line_cr_ids = {
-        line[2]['move_line_id']: {
-            'amount': line[2]['amount'],
-            'type': line[2]['type'],
-            'reconcile': line[2]['reconcile']
-        }
-        for line in context.get('line_cr_ids', [])
-        if line[2] and line[2]['amount'] and
-        line[2].get('type', False) == 'cr'
-    }
-
-    return line_dr_ids, line_cr_ids
-
-
-def update_lines(onchange_res, line_dr_ids, line_cr_ids):
-    if 'value' in onchange_res and 'line_dr_ids' in onchange_res['value']:
-        for line in onchange_res['value']['line_dr_ids']:
-
-            move_line_id = line.get('move_line_id', False)
-
-            if move_line_id and move_line_id in line_dr_ids:
-                old_dr_line = line_dr_ids[move_line_id]
-
-                if old_dr_line['reconcile']:
-                    line['amount'] = line['amount_unreconciled']
-                else:
-                    line['amount'] = old_dr_line['amount']
-
-                if line['amount_unreconciled'] == line['amount']:
-                    line['reconcile'] = True
-                else:
-                    line['reconcile'] = False
-
-            else:
-                line['amount'] = 0.0
-                line['reconcile'] = False
-
-    if 'value' in onchange_res and 'line_cr_ids' in onchange_res['value']:
-        for line in onchange_res['value']['line_cr_ids']:
-
-            move_line_id = line.get('move_line_id', False)
-
-            if move_line_id and move_line_id in line_cr_ids:
-                old_cr_line = line_cr_ids[move_line_id]
-
-                if old_cr_line['reconcile']:
-                    line['amount'] = line['amount_unreconciled']
-                else:
-                    line['amount'] = old_cr_line['amount']
-
-                if line['amount_unreconciled'] == line['amount']:
-                    line['reconcile'] = True
-                else:
-                    line['reconcile'] = False
-
-            else:
-                line['amount'] = 0.0
-                line['reconcile'] = False
+from openerp import api, models
 
 
 class AccountVoucher(models.Model):
 
     _inherit = 'account.voucher'
 
-    def onchange_partner_id(self, cr, uid, ids, *args, **kwargs):
+    @api.multi
+    def onchange_partner_id(
+        self, partner_id, journal_id, amount, currency_id, ttype, date
+    ):
+        context = self.env.context
 
-        context = kwargs.get('context', False) or args[-1]
+        line_dr_ids, line_cr_ids = self.copy_auto_lines()
+
         res = super(AccountVoucher, self).onchange_partner_id(
-            cr, uid, ids, *args, **kwargs)
+            partner_id, journal_id, amount, currency_id, ttype, date)
 
-        # Check that the method was called from the account payment view
-        if (isinstance(context, dict) and
-            (context.get('allow_auto_lines', False) or
-             context.get('active_model', False) == 'account.invoice')):
+        if (
+            not self.env.user.company_id.disable_voucher_auto_lines or
+            context.get('allow_auto_lines') or
+            context.get('active_model') == 'account.invoice'
+        ):
             return res
 
-        if 'value' in res and 'line_cr_ids' in res['value']:
-            for line in res['value']['line_cr_ids']:
-                line['amount'] = 0.0
-                line['reconcile'] = False
-
-        if 'value' in res and 'line_dr_ids' in res['value']:
-            for line in res['value']['line_dr_ids']:
-                line['amount'] = 0.0
-                line['reconcile'] = False
+        self.update_auto_lines(res, line_dr_ids, line_cr_ids)
 
         return res
 
-    def onchange_journal(self, cr, uid, ids, *args, **kwargs):
+    @api.multi
+    def onchange_journal(
+        self, journal_id, line_ids, tax_id, partner_id,
+        date, amount, ttype, company_id
+    ):
+        context = self.env.context
 
-        context = kwargs.get('context', False) or args[-1]
-
-        line_dr_ids, line_cr_ids = copy_lines(context)
+        line_dr_ids, line_cr_ids = self.copy_auto_lines()
 
         res = super(AccountVoucher, self).onchange_journal(
-            cr, uid, ids, *args, **kwargs)
+            journal_id, line_ids, tax_id, partner_id, date,
+            amount, ttype, company_id)
 
-        # Check that the method was called from the account payment view
-        if context.get('allow_auto_lines', False):
+        if (
+            not self.env.user.company_id.disable_voucher_auto_lines or
+            context.get('allow_auto_lines') or
+            context.get('active_model') == 'account.invoice'
+        ):
             return res
 
-        update_lines(res, line_dr_ids, line_cr_ids)
+        self.update_auto_lines(res, line_dr_ids, line_cr_ids)
 
         return res
 
-    def onchange_amount(self, cr, uid, ids, *args, **kwargs):
+    @api.model
+    def update_auto_lines(self, onchange_res, line_dr_ids, line_cr_ids):
+        if not onchange_res:
+            return
 
-        context = kwargs.get('context', False) or args[-1]
+        if 'value' in onchange_res and 'line_dr_ids' in onchange_res['value']:
+            for line in onchange_res['value']['line_dr_ids']:
 
-        res = super(AccountVoucher, self).onchange_amount(
-            cr, uid, ids, *args, **kwargs)
+                if not isinstance(line, dict):
+                    continue
 
-        # Check that the method was called from the account payment view
-        if context.get('allow_auto_lines', False):
-            return res
+                move_line_id = line.get('move_line_id')
 
-        if res.get('value', False):
-            if res['value'].get('line_cr_ids', False):
-                del res['value']['line_cr_ids']
-            if res['value'].get('line_dr_ids', False):
-                del res['value']['line_dr_ids']
+                if move_line_id and move_line_id in line_dr_ids:
+                    old_dr_line = line_dr_ids[move_line_id]
+                    line['amount'] = old_dr_line['amount']
+
+                else:
+                    line['amount'] = 0
+                    line['reconcile'] = False
+
+        if 'value' in onchange_res and 'line_cr_ids' in onchange_res['value']:
+            for line in onchange_res['value']['line_cr_ids']:
+
+                if not isinstance(line, dict):
+                    continue
+
+                move_line_id = line.get('move_line_id')
+
+                if move_line_id and move_line_id in line_cr_ids:
+                    old_cr_line = line_cr_ids[move_line_id]
+                    line['amount'] = old_cr_line['amount']
+
+                else:
+                    line['amount'] = 0
+                    line['reconcile'] = False
+
+    @api.model
+    def copy_auto_lines(self):
+        line_dr_ids = {}
+        line_cr_ids = {}
+
+        old_line_cr_ids = self.env.context.get('line_cr_ids', [])
+        old_line_dr_ids = self.env.context.get('line_dr_ids', [])
+
+        for line in old_line_dr_ids:
+            if len(line) != 3 or not isinstance(line[2], dict):
+                continue
+
+            line_dr_ids[line[2].get('move_line_id')] = {
+                'amount': line[2].get('amount'),
+                'reconcile': line[2].get('reconcile'),
+            }
+
+        for line in old_line_cr_ids:
+            if len(line) != 3 or not isinstance(line[2], dict):
+                continue
+
+            line_cr_ids[line[2].get('move_line_id')] = {
+                'amount': line[2].get('amount'),
+                'reconcile': line[2].get('reconcile'),
+            }
+
+        return line_dr_ids, line_cr_ids
+
+    @api.multi
+    def onchange_amount(
+        self, amount, rate, partner_id, journal_id,
+        currency_id, ttype, date, payment_rate_currency_id, company_id
+    ):
+        """
+        Patch the original onchange_amount method so that it does not
+        refresh the list of voucher lines when not required.
+        """
+        self = self.with_context(date=date)
+
+        if currency_id:
+            currency = self.env['res.currency'].browse(currency_id)
+        else:
+            company = self.env['res.company'].browse(company_id)
+            currency = company.currency_id
+
+        voucher_rate = currency.rate
+
+        self = self.with_context(
+            voucher_special_currency=payment_rate_currency_id,
+            voucher_special_currency_rate=rate * voucher_rate
+        )
+
+        if self.env.context.get('allow_auto_lines'):
+            res = self.recompute_voucher_lines(
+                partner_id, journal_id, amount, currency_id,
+                ttype, date)
+        else:
+            res = {'value': {}}
+
+        vals = self.onchange_rate(
+            rate, amount, currency_id, payment_rate_currency_id, company_id)
+
+        for key in vals.keys():
+            res[key].update(vals[key])
 
         return res

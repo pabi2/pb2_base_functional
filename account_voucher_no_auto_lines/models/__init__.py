@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###############################################################################
 #
-#    OpenERP, Open Source Management Solution
-#    This module copyright (C) 2014 Savoir-faire Linux
+#    Odoo, Open Source Management Solution
+#    This module copyright (C) 2016 Savoir-faire Linux
 #    (<http://www.savoirfairelinux.com>).
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -20,4 +20,6 @@
 #
 ###############################################################################
 
+from . import account_config_settings
 from . import account_voucher
+from . import res_company
