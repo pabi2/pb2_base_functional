@@ -92,6 +92,12 @@ class AccountVoucher(models.Model):
 
                 else:
                     line['amount'] = 0
+                    # Kitti, special fix for l10n_th_account
+                    if 'amount_wht' in line:
+                        line['amount_wht'] = 0.0
+                    if 'amount_retention' in line:
+                        line['amount_retention'] = 0.0
+                    # --
                     line['reconcile'] = False
 
         if 'value' in onchange_res and 'line_cr_ids' in onchange_res['value']:
@@ -108,6 +114,12 @@ class AccountVoucher(models.Model):
 
                 else:
                     line['amount'] = 0
+                    # Kitti, special fix for l10n_th_account
+                    if 'amount_wht' in line:
+                        line['amount_wht'] = 0.0
+                    if 'amount_retention' in line:
+                        line['amount_retention'] = 0.0
+                    # --
                     line['reconcile'] = False
 
     @api.model
