@@ -112,7 +112,7 @@ class account_move(models.Model):
                  'amount_currency': reversal_move_line.amount_currency * -1,
                  'name': reversal_ml_name},
                 check=True,
-                update_check=True)
+                update_check=False)  # update_check=True
 
         reversal_move.validate()
         return reversal_move.id
