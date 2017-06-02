@@ -7,54 +7,54 @@ msgid ""
 msgstr ""
 "Project-Id-Version: account-financial-tools (8.0)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-07-01 13:26+0000\n"
-"PO-Revision-Date: 2015-06-03 15:58+0000\n"
+"POT-Creation-Date: 2016-12-23 23:20+0000\n"
+"PO-Revision-Date: 2016-12-27 08:26+0000\n"
 "Last-Translator: OCA Transbot <transbot@odoo-community.org>\n"
-"Language-Team: English (http://www.transifex.com/oca/OCA-account-financial-tools-8-0/language/en/)\n"
+"Language-Team: Slovak (http://www.transifex.com/oca/OCA-account-financial-tools-8-0/language/sk/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
-"Language: en\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: sk\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:376
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:402
 #, python-format
 msgid "Active Assets"
-msgstr "Active Assets"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: model:ir.model,name:account_asset_management_xls.model_account_asset_asset
 msgid "Asset"
-msgstr "Asset"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: field:wiz.account.asset.report,parent_asset_id:0
 msgid "Asset Filter"
-msgstr "Asset Filter"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: view:wiz.account.asset.report:account_asset_management_xls.view_account_asset_report_wizard
 msgid "Cancel"
-msgstr "Cancel"
+msgstr "Zrušiť"
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/wizard/account_asset_report_wizard.py:49
 #: code:addons/account_asset_management_xls/wizard/account_asset_report_wizard.py:63
 #, python-format
 msgid "Configuration Error"
-msgstr "Configuration Error"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: field:wiz.account.asset.report,create_uid:0
 msgid "Created by"
-msgstr "Created by"
+msgstr "Vytvoril"
 
 #. module: account_asset_management_xls
 #: field:wiz.account.asset.report,create_date:0
 msgid "Created on"
-msgstr "Created on"
+msgstr "Vytvorené"
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:488
@@ -62,7 +62,7 @@ msgstr "Created on"
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:828
 #, python-format
 msgid "Customization Error"
-msgstr "Customization Error"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:672
@@ -70,14 +70,19 @@ msgstr "Customization Error"
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:685
 #, python-format
 msgid "Data Error"
-msgstr "Data Error"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:681
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:686
 #, python-format
 msgid "Depreciation Table error for asset %s !"
-msgstr "Depreciation Table error for asset %s !"
+msgstr ""
+
+#. module: account_asset_management_xls
+#: field:wiz.account.asset.report,display_name:0
+msgid "Display Name"
+msgstr "Zobraziť meno"
 
 #. module: account_asset_management_xls
 #: model:ir.actions.act_window,name:account_asset_management_xls.action_account_asset_report_wizard
@@ -85,19 +90,19 @@ msgstr "Depreciation Table error for asset %s !"
 #: model:ir.ui.menu,name:account_asset_management_xls.menu_account_asset_report_wizard
 #: view:wiz.account.asset.report:account_asset_management_xls.view_account_asset_report_wizard
 msgid "Financial Assets report"
-msgstr "Financial Assets report"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:368
 #: field:wiz.account.asset.report,fiscalyear_id:0
 #, python-format
 msgid "Fiscal Year"
-msgstr "Fiscal Year"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: view:wiz.account.asset.report:account_asset_management_xls.view_account_asset_report_wizard
 msgid "Generate Report"
-msgstr "Generate Report"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: field:wiz.account.asset.report,id:0
@@ -105,58 +110,63 @@ msgid "ID"
 msgstr "ID"
 
 #. module: account_asset_management_xls
+#: field:wiz.account.asset.report,__last_update:0
+msgid "Last Modified on"
+msgstr "Posledná modifikácia"
+
+#. module: account_asset_management_xls
 #: field:wiz.account.asset.report,write_uid:0
 msgid "Last Updated by"
-msgstr "Last Updated by"
+msgstr "Naposledy upravil"
 
 #. module: account_asset_management_xls
 #: field:wiz.account.asset.report,write_date:0
 msgid "Last Updated on"
-msgstr "Last Updated on"
+msgstr "Naposledy upravené"
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:371
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:400
 #, python-format
 msgid "New Acquisitions"
-msgstr "New Acquisitions"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:405
 #, python-format
 msgid "No"
-msgstr "No"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/wizard/account_asset_report_wizard.py:70
 #, python-format
 msgid "No Data Available"
-msgstr "No Data Available"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/wizard/account_asset_report_wizard.py:64
 #, python-format
 msgid "No parent asset defined for asset '%s'!"
-msgstr "No parent asset defined for asset '%s'!"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/wizard/account_asset_report_wizard.py:71
 #, python-format
 msgid "No records found for your selection!"
-msgstr "No records found for your selection!"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/wizard/account_asset_report_wizard.py:50
 #, python-format
 msgid "No top level asset of type 'view' defined!"
-msgstr "No top level asset of type 'view' defined!"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:381
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:404
 #, python-format
 msgid "Removed Assets"
-msgstr "Removed Assets"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:488
@@ -164,21 +174,21 @@ msgstr "Removed Assets"
 msgid ""
 "The 'account' field is a mandatory entry of the '_xls_acquisition_fields' "
 "list !"
-msgstr "The 'account' field is a mandatory entry of the '_xls_acquisition_fields' list !"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:608
 #, python-format
 msgid ""
 "The 'account' field is a mandatory entry of the '_xls_active_fields' list !"
-msgstr "The 'account' field is a mandatory entry of the '_xls_active_fields' list !"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:828
 #, python-format
 msgid ""
 "The 'account' field is a mandatory entry of the '_xls_removal_fields' list !"
-msgstr "The 'account' field is a mandatory entry of the '_xls_removal_fields' list !"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: code:addons/account_asset_management_xls/report/account_asset_report_xls.py:673
@@ -186,9 +196,9 @@ msgstr "The 'account' field is a mandatory entry of the '_xls_removal_fields' li
 msgid ""
 "You can not report on a Fiscal Year with unposted entries in prior years. "
 "Please post depreciation table entry dd. '%s'  of asset '%s' !"
-msgstr "You can not report on a Fiscal Year with unposted entries in prior years. Please post depreciation table entry dd. '%s'  of asset '%s' !"
+msgstr ""
 
 #. module: account_asset_management_xls
 #: view:wiz.account.asset.report:account_asset_management_xls.view_account_asset_report_wizard
 msgid "or"
-msgstr "or"
+msgstr "alebo"
