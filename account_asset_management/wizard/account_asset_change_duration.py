@@ -37,8 +37,8 @@ class asset_modify(orm.TransientModel):
         'method_period': fields.selection([
             ('month', 'Month'),
             ('quarter', 'Quarter'),
-            ('year', 'Year'),
-            ], 'Period Length',
+            ('year', 'Year'), ],
+            'Period Length',
             help="Period length for the depreciation accounting entries"),
         'method_end': fields.date('Ending date'),
         'note': fields.text('Notes'),
@@ -57,15 +57,16 @@ class asset_modify(orm.TransientModel):
         if active_model == 'account.asset.asset' and asset_id:
             asset = asset_obj.browse(cr, uid, asset_id, context=context)
             doc = etree.XML(result['arch'])
-            if asset.method_time == 'number':
-                node_me = doc.xpath("//field[@name='method_end']")[0]
-                node_me.set('invisible', '1')
-            elif asset.method_time == 'end':
-                node_mn = doc.xpath("//field[@name='method_number']")[0]
-                node_mn.set('invisible', '1')
-            elif asset.method_time == 'year':
-                node_me = doc.xpath("//field[@name='method_end']")[0]
-                node_me.set('invisible', '1')
+            if doc.xpath("//form"):  # Was error when get search view
+                if asset.method_time == 'number':
+                    node_me = doc.xpath("//field[@name='method_end']")[0]
+                    node_me.set('invisible', '1')
+                elif asset.method_time == 'end':
+                    node_mn = doc.xpath("//field[@name='method_number']")[0]
+                    node_mn.set('invisible', '1')
+                elif asset.method_time == 'year':
+                    node_me = doc.xpath("//field[@name='method_end']")[0]
+                    node_me.set('invisible', '1')
             result['arch'] = etree.tostring(doc)
         return result
 
