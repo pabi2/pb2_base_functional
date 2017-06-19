@@ -61,7 +61,8 @@ class account_asset_remove(orm.TransientModel):
         sale_value = 0.0
         account_sale_id = False
         inv_line_ids = inv_line_obj.search(
-            cr, uid, [('asset_id', '=', asset_id)], context=context)
+            cr, uid, [('asset_id', '=', asset_id),
+                      ('asset_id', '!=', False)], context=context)
         for line in inv_line_obj.browse(cr, uid, inv_line_ids):
             inv = line.invoice_id
             comp_curr = inv.company_id.currency_id
@@ -173,6 +174,8 @@ class account_asset_remove(orm.TransientModel):
             [('asset_id', '=', asset.id), ('type', '=', 'depreciate'),
              ('init_entry', '=', False), ('move_check', '=', False)],
             order='line_date asc')
+        if not dl_ids:
+            return asset.value_residual
         first_to_depreciate_dl = asset_line_obj.browse(cr, uid, dl_ids[0])
 
         first_date = first_to_depreciate_dl.line_date
@@ -182,7 +185,8 @@ class account_asset_remove(orm.TransientModel):
                 _("You can't make an early removal if all the depreciation "
                   "lines for previous periods are not posted."))
 
-        last_depr_date = first_to_depreciate_dl.previous_id.line_date
+        last_depr_date = first_to_depreciate_dl.previous_id.line_date or \
+            first_to_depreciate_dl.asset_id.date_start
         period_number_days = (
             datetime.strptime(first_date, '%Y-%m-%d') -
             datetime.strptime(last_depr_date, '%Y-%m-%d')).days
@@ -305,7 +309,9 @@ class account_asset_remove(orm.TransientModel):
             cr, uid,
             [('asset_id', '=', asset.id), ('type', '=', 'depreciate')],
             order='line_date desc')
-        last_date = asset_line_obj.browse(cr, uid, dl_ids[0]).line_date
+        last_date = asset.date_start
+        if dl_ids:
+            last_date = asset_line_obj.browse(cr, uid, dl_ids[0]).line_date
         if wiz_data.date_remove < last_date:
             raise orm.except_orm(
                 _('Error!'),
