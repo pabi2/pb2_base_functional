@@ -87,7 +87,7 @@ class AccountAssetRemove(models.TransientModel):
                 account_sale_id = line.account_id.id
                 amount = line.price_subtotal
                 if inv_curr != comp_curr:
-                    amount = comp_curr.compute(amount, inv_curr)
+                    amount = comp_curr.compute(amount)
                 sale_value += amount
         return {'sale_value': sale_value, 'account_sale_id': account_sale_id}
 

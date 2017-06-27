@@ -574,6 +574,7 @@ class AccountAsset(models.Model):
                             'asset_id': asset.id,
                             'name': name,
                             'line_date': line['date'].strftime('%Y-%m-%d'),
+                            'line_days': line['days'],
                             'init_entry': entry['init'],
                         }
                         depreciated_value += amount
@@ -783,7 +784,10 @@ class AccountAsset(models.Model):
         # last entry
         if not (self.method_time == 'number' and
                 len(line_dates) == self.method_number):
-            line_dates.append(line_date)
+            if self.days_calc:
+                line_dates.append(stop_date)
+            else:
+                line_dates.append(line_date)
 
         return line_dates
 
@@ -803,11 +807,12 @@ class AccountAsset(models.Model):
             fy_amount = entry['fy_amount']
             li_max = len(line_dates) - 1
 
-            prev_date = max(entry['date_start'], depreciation_start_date)
+            prev_date = max(entry['date_start'],
+                            depreciation_start_date - relativedelta(days=1))
 
             for li, line_date in enumerate(line_dates):
 
-                days = (line_date - prev_date).days
+                line_days = (line_date - prev_date).days
                 prev_date = line_date
 
                 if round(remaining_value, digits) == 0.0:
@@ -823,12 +828,15 @@ class AccountAsset(models.Model):
                     break
 
                 if i == 0 and li == 0:
-                    amount = self._get_first_period_amount(
-                        table, entry, depreciation_start_date, line_dates)
-                    amount = round(amount, digits)
+                    if entry.get('day_amount') > 0.0:
+                        amount = line_days * entry.get('day_amount')
+                    else:
+                        amount = self._get_first_period_amount(
+                            table, entry, depreciation_start_date, line_dates)
+                        amount = round(amount, digits)
                 else:
                     if entry.get('day_amount') > 0.0:
-                        amount = days * entry.get('day_amount')
+                        amount = line_days * entry.get('day_amount')
                     else:
                         amount = entry.get('period_amount')
 
@@ -842,6 +850,7 @@ class AccountAsset(models.Model):
                 fy_amount_check += amount
                 line = {
                     'date': line_date,
+                    'days': line_days,
                     'amount': amount,
                     'depreciated_value': depreciated_value,
                     'remaining_value': remaining_value,

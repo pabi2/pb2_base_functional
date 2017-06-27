@@ -98,6 +98,7 @@
                   <tree string="Asset Lines" colors="blue:(move_check == False) and (init_entry == False)" create="false">
                     <field name="type"/>
                     <field name="line_date"/>
+                    <field name="line_days"/>
                     <field name="depreciated_value" readonly="1"/>
                     <field name="amount"/>
                     <field name="remaining_value" readonly="1"/>
@@ -260,7 +261,7 @@
     <act_window id="act_entries_open"
                 name="Journal Items"
                 src_model="account.asset"
-                res_model="account.move.line" 
+                res_model="account.move.line"
                 domain="['|',('asset_id','in',context.get('active_ids')),('asset_id','=','active_id')]"/>
 
   </data>
