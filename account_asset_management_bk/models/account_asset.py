@@ -306,7 +306,6 @@ class AccountAsset(models.Model):
             self.method_number = profile.method_number
             self.method_time = profile.method_time
             self.method_period = profile.method_period
-            self.days_calc = profile.days_calc
             self.method_progress_factor = profile.method_progress_factor
             self.prorata = profile.prorata
             self.account_analytic_id = profile.account_analytic_id
