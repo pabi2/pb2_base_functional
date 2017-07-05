@@ -809,11 +809,11 @@ class AccountAsset(models.Model):
             li_max = len(line_dates) - 1
 
             prev_date = max(entry['date_start'],
-                            depreciation_start_date - relativedelta(days=1))
+                            depreciation_start_date)
 
             for li, line_date in enumerate(line_dates):
 
-                line_days = (line_date - prev_date).days
+                line_days = (line_date - prev_date).days + 1
                 prev_date = line_date
 
                 if round(remaining_value, digits) == 0.0:
@@ -975,7 +975,7 @@ class AccountAsset(models.Model):
 
         day_amount = 0.0
         if self.days_calc:
-            days = (depreciation_stop_date - depreciation_start_date).days
+            days = (depreciation_stop_date - depreciation_start_date).days + 1
             day_amount = round(self.depreciation_base / days, digits)
 
         for i, entry in enumerate(table):
