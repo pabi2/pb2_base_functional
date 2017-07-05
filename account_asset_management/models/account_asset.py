@@ -867,7 +867,7 @@ class AccountAsset(models.Model):
             # was compensated in the first FY depreciation line.
             # The code has now been simplified with compensation
             # always in last FT depreciation line.
-            if self.method_time == 'year':
+            if self.method_time == 'year' and not entry.get('day_amount'):
                 if round(fy_amount_check - fy_amount, digits) != 0:
                     diff = fy_amount_check - fy_amount
                     amount = amount - diff
