@@ -11,13 +11,14 @@ class AccessRight(models.TransientModel):
 
     @api.multi
     def apply_access(self):
-        active_id = self._context.get('active_id')
+        active_ids = self._context.get('active_ids')
         for g in self:
-            if self._context and active_id and g.access_right:
-                user_rec = self.env['res.users'].browse(active_id)
-                user_rec.groups_id = [(6, 0, g.access_right.groups_id.ids)]
-                user_rec.last_meta_group_id = g.access_right
-                user_rec.last_meta_group_date = fields.Datetime.now()
+            if self._context and active_ids and g.access_right:
+                users = self.env['res.users'].browse(active_ids)
+                for user_rec in users:
+                    user_rec.groups_id = [(6, 0, g.access_right.groups_id.ids)]
+                    user_rec.last_meta_group_id = g.access_right
+                    user_rec.last_meta_group_date = fields.Datetime.now()
             else:
                 raise exceptions.Warning(
                     _('Please create a Meta Group via '
