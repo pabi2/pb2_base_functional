@@ -814,7 +814,6 @@ class AccountAsset(models.Model):
             for li, line_date in enumerate(line_dates):
 
                 line_days = (line_date - prev_date).days + 1
-                prev_date = line_date
 
                 if round(remaining_value, digits) == 0.0:
                     break
@@ -822,7 +821,10 @@ class AccountAsset(models.Model):
                 if (line_date > min(entry['date_stop'],
                                     depreciation_stop_date) and not
                         (i == i_max and li == li_max)):
+                    prev_date = line_date
                     break
+                else:
+                    prev_date = line_date + relativedelta(days=1)
 
                 if self.method == 'degr-linear' \
                         and asset_sign * (fy_amount - fy_amount_check) < 0:
