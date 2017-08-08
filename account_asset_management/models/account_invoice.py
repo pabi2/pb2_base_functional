@@ -75,8 +75,9 @@ class AccountInvoiceLine(models.Model):
         if account_id:
             account = self.env['account.account'].browse(account_id)
             asset_profile = account.asset_profile_id
+            vals = {'asset_profile_id':
+                    asset_profile and asset_profile.id or False}
             if asset_profile:
-                vals = {'asset_profile_id': asset_profile.id}
                 if 'value' not in res:
                     res['value'] = vals
                 else:
