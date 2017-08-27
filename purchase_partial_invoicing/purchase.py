@@ -29,14 +29,12 @@ class PurchaseOrderLine(models.Model):
     @api.depends('invoice_lines', 'invoice_lines.invoice_id',
                  'invoice_lines.quantity')
     def _compute_invoiced_qty(self):
-        self = self.sudo()  # kittiu: fix permission problem
         self.invoiced_qty = sum(self.invoice_lines.mapped('quantity'))
 
     @api.one
     @api.depends('invoice_lines', 'invoice_lines.invoice_id',
                  'invoice_lines.quantity', 'cancelled_qty')
     def _compute_fully_invoiced(self):
-        self = self.sudo()  # kittiu: fix permission problem
         self.fully_invoiced = \
             (self.invoiced_qty + self.cancelled_qty >= self.product_qty)
 
