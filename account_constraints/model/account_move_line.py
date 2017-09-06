@@ -146,7 +146,7 @@ class AccountMoveLine(models.Model):
                     raise exceptions.Warning(
                         _("The amount expressed in the secondary currency "
                           "must be positive when journal item are debit and "
-                          "negatif when journal item are credit."))
+                          "negative when journal item are credit."))
         return True
 
     @api.constrains('currency_id')
