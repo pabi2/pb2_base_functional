@@ -50,6 +50,6 @@ class StockTransferDetails(models.TransientModel):
                     if difference < 0:
                         raise exceptions.Warning(
                             _('Quantity error'),
-                            _('Not found enought stock in %s for product %s') %
+                            _('Not found enough stock in %s for product %s') %
                             (location.name, product.name))
         return super(StockTransferDetails, self).do_detailed_transfer()
