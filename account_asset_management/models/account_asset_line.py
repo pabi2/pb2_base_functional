@@ -163,6 +163,7 @@ class AccountAssetLine(models.Model):
 
     @api.multi
     def unlink(self):
+        ctx = {}
         for dl in self:
             if dl.type == 'create':
                 raise UserError(_(
