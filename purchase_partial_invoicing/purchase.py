@@ -29,7 +29,11 @@ class PurchaseOrderLine(models.Model):
     @api.depends('invoice_lines', 'invoice_lines.invoice_id',
                  'invoice_lines.quantity')
     def _compute_invoiced_qty(self):
-        self.invoiced_qty = sum(self.invoice_lines.mapped('quantity'))
+        # kittiu: invoiced_qty should not count those in cancelled invoice
+        # self.invoiced_qty = sum(self.invoice_lines.mapped('quantity'))
+        lines = self.invoice_lines.filtered(lambda l:
+                                            l.invoice_id.state != 'cancel')
+        self.invoiced_qty = sum(lines.mapped('quantity'))
 
     @api.one
     @api.depends('invoice_lines', 'invoice_lines.invoice_id',
@@ -51,12 +55,12 @@ class PurchaseOrderLine(models.Model):
 
     invoiced_qty = fields.Float(
         compute='_compute_invoiced_qty',
-        digits_compute=dp.get_precision('Product Unit of Measure'),
+        digits=dp.get_precision('Product Unit of Measure'),
         copy=False, store=True)
 
     cancelled_qty = fields.Float(
         string='Cancelled Quantity',
-        digits_compute=dp.get_precision('Product Unit of Measure'),
+        digits=dp.get_precision('Product Unit of Measure'),
         copy=False)
 
     fully_invoiced = fields.Boolean(
@@ -86,7 +90,7 @@ class PurchaseOrder(models.Model):
         ctx = self.env.context.copy()
         if ctx.get('partial_quantity_lines'):
             partial_quantity_lines = ctx.get('partial_quantity_lines')
-            if partial_quantity_lines.get(order_line.id):
+            if order_line.id in partial_quantity_lines:
                 res.update({'quantity':
                             partial_quantity_lines.get(order_line.id)})
         return res
