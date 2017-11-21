@@ -333,7 +333,7 @@ class AccountAsset(models.Model):
         asset = super(AccountAsset, self).create(vals)
         if self._context.get('create_asset_from_move_line'):
             # Trigger compute of depreciation_base
-            asset.salvage_value = 0.0
+            asset.salvage_value = vals.get('salvage_value', False) or 0.0
         if asset.type == 'normal':
             # create first asset line
             asset_line_obj = self.env['account.asset.line']
