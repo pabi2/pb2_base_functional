@@ -957,7 +957,7 @@ class AccountAsset(models.Model):
                 init_flag = False
             except:
                 fy_id = False
-            if fy_id:
+            if fy_id and self.method_period == 'year':
                 fy = fy_obj.browse(fy_id)
                 if fy.state == 'done':
                     init_flag = True
