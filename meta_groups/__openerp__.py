@@ -24,6 +24,7 @@ automatically!
     "init_xml" : [],
     "demo_xml" : [],
     "data" : [
+        'security/ir.model.access.csv',
         'views/access_right_view.xml',
         'views/res_users_view.xml',
         'wizard/access_rights_wizard_view.xml',
