@@ -1078,7 +1078,7 @@ class AccountAsset(models.Model):
             try:
                 with self._cr.savepoint():
                     result += depreciation.create_move()
-            except:
+            except Exception:
                 e = exc_info()[0]
                 tb = ''.join(format_exception(*exc_info()))
                 asset_ref = depreciation.asset_id.code and '%s (ref: %s)' \
