@@ -247,6 +247,16 @@ class AccountEasyReconcile(models.Model):
                     'reconcile_partial_id',
                     all_ml_partial_ids
                 )
+                # kittiu: possile that partial ml, will gets full reconcile
+                partial_ids += find_reconcile_ids(
+                    'reconcile_partial_id',
+                    all_ml_rec_ids
+                )
+                reconcile_ids += find_reconcile_ids(
+                    'reconcile_id',
+                    all_ml_partial_ids
+                )
+                # --
                 self.env['easy.reconcile.history'].create(
                     {
                         'easy_reconcile_id': rec.id,
