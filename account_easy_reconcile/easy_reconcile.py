@@ -119,25 +119,29 @@ class AccountEasyReconcile(models.Model):
     _inherit = ['mail.thread']
     _description = 'account easy reconcile'
 
-    @api.one
-    @api.depends('account')
+    @api.multi
+    @api.depends('account', 'period_id')
     def _get_total_unrec(self):
-        obj_move_line = self.env['account.move.line']
-        self.unreconciled_count = obj_move_line.search_count(
-            [('account_id', '=', self.account.id),
-             ('reconcile_id', '=', False),
-             ('reconcile_partial_id', '=', False)],
-            )
+        for rec in self:
+            obj_move_line = self.env['account.move.line']
+            domain = [('account_id', '=', rec.account.id),
+                      ('reconcile_id', '=', False),
+                      ('reconcile_partial_id', '=', False)]
+            if rec.period_id:
+                domain += [('period_id', '=', rec.period_id.id)]
+            rec.unreconciled_count = obj_move_line.search_count(domain)
 
-    @api.one
-    @api.depends('account')
+    @api.multi
+    @api.depends('account', 'period_id')
     def _get_partial_rec(self):
-        obj_move_line = self.env['account.move.line']
-        self.reconciled_partial_count = obj_move_line.search_count(
-            [('account_id', '=', self.account.id),
-             ('reconcile_id', '=', False),
-             ('reconcile_partial_id', '!=', False)],
-            )
+        for rec in self:
+            obj_move_line = rec.env['account.move.line']
+            domain = [('account_id', '=', rec.account.id),
+                      ('reconcile_id', '=', False),
+                      ('reconcile_partial_id', '!=', False)]
+            if rec.period_id:
+                domain += [('period_id', '=', rec.period_id.id)]
+            rec.reconciled_partial_count = obj_move_line.search_count(domain)
 
     @api.one
     @api.depends('history_ids')
@@ -178,10 +182,12 @@ class AccountEasyReconcile(models.Model):
                                    compute='_last_history',
                                    )
     company_id = fields.Many2one('res.company', string='Company')
+    period_id = fields.Many2one('account.period', string='Period')
 
     @api.model
     def _prepare_run_transient(self, rec_method):
         return {'account_id': rec_method.task_id.account.id,
+                'period_id': rec_method.task_id.period_id.id,
                 'write_off': rec_method.write_off,
                 'account_lost_id': (rec_method.account_lost_id.id),
                 'account_profit_id': (rec_method.account_profit_id.id),
@@ -324,23 +330,28 @@ class AccountEasyReconcile(models.Model):
         """ Open the view of move line with the unreconciled move lines"""
         self.ensure_one()
         obj_move_line = self.env['account.move.line']
-        lines = obj_move_line.search(
-            [('account_id', '=', self.account.id),
-             ('reconcile_id', '=', False),
-             ('reconcile_partial_id', '=', False)])
+        domain = [('account_id', '=', self.account.id),
+                  ('reconcile_id', '=', False),
+                  ('reconcile_partial_id', '=', False)]
+        if self.period_id:
+            domain += [('period_id', '=', self.period_id.id)]
+        lines = obj_move_line.search(domain)
         name = _('Unreconciled items')
         return self._open_move_line_list(lines.ids or [], name)
 
     @api.multi
     def open_partial_reconcile(self):
+        """ Overwrite """
         """ Open the view of move line with the partially
         reconciled move lines"""
         self.ensure_one()
         obj_move_line = self.env['account.move.line']
-        lines = obj_move_line.search(
-            [('account_id', '=', self.account.id),
-             ('reconcile_id', '=', False),
-             ('reconcile_partial_id', '!=', False)])
+        domain = [('account_id', '=', self.account.id),
+                  ('reconcile_id', '=', False),
+                  ('reconcile_partial_id', '!=', False)]
+        if self.period_id:
+            domain += [('period_id', '=', self.period_id.id)]
+        lines = obj_move_line.search(domain)
         name = _('Partial reconciled items')
         return self._open_move_line_list(lines.ids or [], name)
 

@@ -41,6 +41,10 @@ class EasyReconcileBase(models.AbstractModel):
         comodel_name='res.partner',
         string='Restrict on partners',
     )
+    period_id = fields.Many2one(
+        comodel_name='account.period',
+        string='Period',
+    )
     # other fields are inherited from easy.reconcile.options
 
     @api.multi
@@ -100,6 +104,9 @@ class EasyReconcileBase(models.AbstractModel):
         # which returns a list, we have to
         # accomodate with that
         params = [self.account_id.id]
+        if self.period_id:
+            where += " AND account_move_line.period_id = %s"
+            params.append(self.period_id.id)
         if self.partner_ids:
             where += " AND account_move_line.partner_id IN %s"
             params.append(tuple([l.id for l in self.partner_ids]))
