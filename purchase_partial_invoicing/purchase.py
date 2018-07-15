@@ -26,8 +26,9 @@ import openerp.addons.decimal_precision as dp
 class PurchaseOrderLine(models.Model):
 
     @api.one
-    @api.depends('invoice_lines', 'invoice_lines.invoice_id',
-                 'invoice_lines.quantity')
+    # kittiu: should be realime
+    # @api.depends('invoice_lines', 'invoice_lines.invoice_id',
+    #              'invoice_lines.quantity')
     def _compute_invoiced_qty(self):
         # kittiu: invoiced_qty should not count those in cancelled invoice
         # self.invoiced_qty = sum(self.invoice_lines.mapped('quantity'))
@@ -56,7 +57,9 @@ class PurchaseOrderLine(models.Model):
     invoiced_qty = fields.Float(
         compute='_compute_invoiced_qty',
         digits=dp.get_precision('Product Unit of Measure'),
-        copy=False, store=True)
+        copy=False,
+        # store=True, kittiu: should be real time
+        )
 
     cancelled_qty = fields.Float(
         string='Cancelled Quantity',
