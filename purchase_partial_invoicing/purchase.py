@@ -58,8 +58,7 @@ class PurchaseOrderLine(models.Model):
         compute='_compute_invoiced_qty',
         digits=dp.get_precision('Product Unit of Measure'),
         copy=False,
-        # store=True, kittiu: should be real time
-        )
+        store=False)  # kittiu: should be real time
 
     cancelled_qty = fields.Float(
         string='Cancelled Quantity',
