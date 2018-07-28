@@ -450,6 +450,7 @@
                 <xpath expr="//field[@name='code']" position="after">
                     <field name="quick_view" attrs="{'invisible': [('code', '!=', 'internal')]}" readonly="1" />
                     <field name="suggest_moves" attrs="{'invisible': [('quick_view', '=', False)]}" />
+                    <field name="sequence" help="Picking Type, to order by this sequence"/>
                 </xpath>
             </field>
         </record>
