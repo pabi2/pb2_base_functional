@@ -1037,6 +1037,23 @@ class AccountAsset(models.Model):
         """ use this method to customise the name of the accounting entry """
         return (self.code or str(self.id)) + '/' + str(seq)
 
+    @api.model
+    def _test_prev_depre_posted(self, period, asset):
+        """ refactor code by kittiu, so this method can be reused """
+        asset_line_obj = self.env['account.asset.line']
+        depreciations = asset_line_obj.search([
+            ('asset_id', '=', asset.id),
+            ('type', '=', 'depreciate'),
+            ('init_entry', '=', False),
+            ('line_date', '<', period.date_start),
+            ('move_check', '=', False)])
+        if depreciations:
+            message = _("Asset contains unposted lines "
+                        "prior to the selected period. "
+                        "Please post those entries first!")
+            return (False, message)  # Error
+        return (True, False)
+
     @api.multi
     def _compute_entries(self, period, check_triggers=False):
         # To DO : add ir_cron job calling this method to
@@ -1053,19 +1070,11 @@ class AccountAsset(models.Model):
                 if asset.company_id.id in trigger_companies.ids:
                     asset.compute_depreciation_board()
         for asset in self:
-            depreciations = asset_line_obj.search([
-                ('asset_id', '=', asset.id),
-                ('type', '=', 'depreciate'),
-                ('init_entry', '=', False),
-                ('line_date', '<', period.date_start),
-                ('move_check', '=', False)])
-            if depreciations:
+            posted, message = self._test_prev_depre_posted(period, asset)
+            if not posted:
                 asset_ref = asset.code and '%s (ref: %s)' \
                     % (asset.name, asset.code) or asset.name
-                raise UserError(
-                    _("Asset '%s' contains unposted lines "
-                      "prior to the selected period."
-                      "\nPlease post these entries first !") % asset_ref)
+                raise UserError('%s, %s' % (asset_ref, message))
 
         depreciations = asset_line_obj.search([
             ('asset_id', 'in', self.ids),
