@@ -1037,22 +1037,34 @@ class AccountAsset(models.Model):
         """ use this method to customise the name of the accounting entry """
         return (self.code or str(self.id)) + '/' + str(seq)
 
-    @api.model
-    def _test_prev_depre_posted(self, period, asset):
-        """ refactor code by kittiu, so this method can be reused """
-        asset_line_obj = self.env['account.asset.line']
-        depreciations = asset_line_obj.search([
-            ('asset_id', '=', asset.id),
-            ('type', '=', 'depreciate'),
-            ('init_entry', '=', False),
-            ('line_date', '<', period.date_start),
-            ('move_check', '=', False)])
-        if depreciations:
-            message = _("Asset contains unposted lines "
-                        "prior to the selected period. "
-                        "Please post those entries first!")
-            return (False, message)  # Error
-        return (True, False)
+    @api.multi
+    def _test_prev_depre_unposted(self, period):
+        """ Refactor code by kittiu, so this method can be reused
+            also works with multiple assets (will return list of assets) """
+        self._cr.execute("""
+            select asset_id
+            from account_asset_line
+            where asset_id in %s
+                and type = 'depreciate'
+                and init_entry = false
+                and line_date < %s
+                and move_check = false
+        """, (tuple(self.ids), period.date_start))
+        # asset_line_obj = self.env['account.asset.line']
+        # depreciations = asset_line_obj.search([
+        #     ('asset_id', '=', asset.id),
+        #     ('type', '=', 'depreciate'),
+        #     ('init_entry', '=', False),
+        #     ('line_date', '<', period.date_start),
+        #     ('move_check', '=', False)])
+        unposted_asset_ids = [x[0] for x in self._cr.fetchall()]
+        return unposted_asset_ids
+        # if depreciations:
+        #     message = _("Asset contains unposted lines "
+        #                 "prior to the selected period. "
+        #                 "Please post those entries first!")
+        #     return (False, message)  # Error
+        # return (True, False)
 
     @api.multi
     def _compute_entries(self, period, check_triggers=False):
@@ -1069,12 +1081,14 @@ class AccountAsset(models.Model):
             for asset in self:
                 if asset.company_id.id in trigger_companies.ids:
                     asset.compute_depreciation_board()
-        for asset in self:
-            posted, message = self._test_prev_depre_posted(period, asset)
-            if not posted:
-                asset_ref = asset.code and '%s (ref: %s)' \
-                    % (asset.name, asset.code) or asset.name
-                raise UserError('%s, %s' % (asset_ref, message))
+
+        # Return asset_ids with prev depre problem
+        unposted_asset_ids = self._test_prev_depre_unposted(period)
+        if unposted_asset_ids:
+            messsage = _("Asset(s) contains unposted lines "
+                         "prior to the selected period. "
+                         "Please post those entries first!")
+            raise UserError(messsage)
 
         depreciations = asset_line_obj.search([
             ('asset_id', 'in', self.ids),
@@ -1084,6 +1098,8 @@ class AccountAsset(models.Model):
             ('line_date', '>=', period.date_start),
             ('move_check', '=', False)])
         for depreciation in depreciations:
+            asset = depreciation.asset_id
+            _logger.info("Generate depres. for asset: %s" % asset.code)
             try:
                 with self._cr.savepoint():
                     result += depreciation.create_move()
