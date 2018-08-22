@@ -194,7 +194,7 @@ class AccountAssetLine(models.Model):
         return move_data
 
     def _setup_move_line_data(self, depreciation_date, period,
-                              account, type, move):
+                              account, type, move_id):
         asset = self.asset_id
         amount = self.amount
         analytic_id = False
@@ -208,7 +208,7 @@ class AccountAssetLine(models.Model):
         move_line_data = {
             'name': asset.name,
             'ref': self.name,
-            'move_id': move.id,
+            'move_id': move_id,
             'account_id': account.id,
             'credit': credit,
             'debit': debit,
@@ -240,10 +240,10 @@ class AccountAssetLine(models.Model):
             depr_acc = asset.profile_id.account_depreciation_id
             exp_acc = asset.profile_id.account_expense_depreciation_id
             aml_d_vals = line._setup_move_line_data(
-                depreciation_date, period, depr_acc, 'depreciation', move)
+                depreciation_date, period, depr_acc, 'depreciation', move.id)
             self.env['account.move.line'].with_context(ctx).create(aml_d_vals)
             aml_e_vals = line._setup_move_line_data(
-                depreciation_date, period, exp_acc, 'expense', move)
+                depreciation_date, period, exp_acc, 'expense', move.id)
             self.env['account.move.line'].with_context(ctx).create(aml_e_vals)
             if move.journal_id.entry_posted:
                 del ctx['novalidate']
@@ -258,6 +258,55 @@ class AccountAssetLine(models.Model):
             if asset.company_id.currency_id.is_zero(asset.value_residual):
                 asset.state = 'close'
         return created_move_ids
+
+    @api.multi
+    def create_single_move(self):
+        """ Similar to create_move() but used for case Grouping
+            This method will always use today as posting date !!!
+        """
+        ctx = dict(self._context,
+                   account_period_prefer_normal=True,
+                   company_id=self.env.user.company_id.id,
+                   allow_asset=True, novalidate=True)
+        period = self.env['account.period'].with_context(ctx).find()
+        asset_ids = [x.asset_id.id for x in self]
+        assets = self.env['account.asset'].browse(list(set(asset_ids)))
+        if not assets:
+            return []
+        asset = assets[0]
+        journal = asset.profile_id.journal_id
+        depr_acc = asset.profile_id.account_depreciation_id
+        exp_acc = asset.profile_id.account_expense_depreciation_id
+        depreciation_date = fields.Date.context_today(self)
+        am_vals = {
+            'name': '/',
+            'date': depreciation_date,
+            'ref': '??? GRP NAME ???',
+            'period_id': period.id,
+            'journal_id': journal.id,
+        }
+        move_lines = []
+        for line in self:
+            aml_d_vals = line._setup_move_line_data(
+                depreciation_date, period, depr_acc, 'depreciation', False)
+            move_lines.append((0, 0, aml_d_vals))
+            aml_e_vals = line._setup_move_line_data(
+                depreciation_date, period, exp_acc, 'expense', False)
+            move_lines.append((0, 0, aml_e_vals))
+        # Create Move
+        am_vals.update({'line_id': move_lines})
+        move = self.env['account.move'].with_context(ctx).create(am_vals)
+        # Link to depre lines
+        write_ctx = dict(self._context, allow_asset_line_update=True)
+        self.with_context(write_ctx).write({'move_id': move.id})
+        if move.journal_id.entry_posted:
+            del ctx['novalidate']
+            move.with_context(ctx).post()
+        # we re-evaluate the assets to determine if we can close them
+        for asset in assets:
+            if asset.company_id.currency_id.is_zero(asset.value_residual):
+                asset.state = 'close'
+        return [move.id]
 
     @api.multi
     def open_move(self):

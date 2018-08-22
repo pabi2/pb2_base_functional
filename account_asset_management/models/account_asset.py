@@ -1067,11 +1067,11 @@ class AccountAsset(models.Model):
         # return (True, False)
 
     @api.multi
-    def _compute_entries(self, period, check_triggers=False):
+    def _compute_entries(self, period, check_triggers=False, merge_move=False):
         # To DO : add ir_cron job calling this method to
         # generate periodical accounting entries
         result = []
-        error_log = ''
+        error_log = []
         asset_line_obj = self.env['account.asset.line']
         if check_triggers:
             recompute_obj = self.env['account.asset.recompute.trigger']
@@ -1097,24 +1097,43 @@ class AccountAsset(models.Model):
             ('line_date', '<=', period.date_stop),
             ('line_date', '>=', period.date_start),
             ('move_check', '=', False)])
-        for depreciation in depreciations:
-            asset = depreciation.asset_id
-            _logger.info("Generate depres. for asset: %s" % asset.code)
+
+        # Special case merge into 1 move
+        if merge_move:
+            _logger.info("Generate merged move for %s depre." %
+                         len(depreciations))
             try:
                 with self._cr.savepoint():
-                    result += depreciation.create_move()
+                    result += depreciations.create_single_move()
             except Exception:
                 e = exc_info()[0]
                 tb = ''.join(format_exception(*exc_info()))
-                asset_ref = depreciation.asset_id.code and '%s (ref: %s)' \
-                    % (asset.name, asset.code) or asset.name
-                error_log += _(
-                    "\nError while processing asset '%s': %s"
-                ) % (asset_ref, str(e))
+                error_log.append(
+                    _("Error while processing deprs. '%s': %s") %
+                     (depreciations, str(e)))
                 error_msg = _(
-                    "Error while processing asset '%s': \n\n%s"
-                ) % (asset_ref, tb)
+                    "Error while processing depre. '%s': \n\n%s"
+                ) % (depreciations, tb)
                 _logger.error("%s, %s", self._name, error_msg)
+        else:  # Standard
+            for depreciation in depreciations:
+                asset = depreciation.asset_id
+                _logger.info("Generate depres. for asset: %s" % asset.code)
+                try:
+                    with self._cr.savepoint():
+                        result += depreciation.create_move()
+                except Exception:
+                    e = exc_info()[0]
+                    tb = ''.join(format_exception(*exc_info()))
+                    asset_ref = depreciation.asset_id.code and '%s (ref: %s)' \
+                        % (asset.name, asset.code) or asset.name
+                    error_log.append(
+                        _("Error while processing asset '%s': %s") %
+                         (asset_ref, str(e)))
+                    error_msg = _(
+                        "Error while processing asset '%s': \n\n%s"
+                    ) % (asset_ref, tb)
+                    _logger.error("%s, %s", self._name, error_msg)
 
         if check_triggers and recomputes:
             companies = recomputes.mapped('company_id')
@@ -1126,5 +1145,5 @@ class AccountAsset(models.Model):
                     'state': 'done',
                 }
                 triggers.sudo().write(recompute_vals)
-
+        error_log = '\n'.join(error_log)
         return (result, error_log)
