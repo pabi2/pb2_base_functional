@@ -262,8 +262,12 @@ class AccountAssetLine(models.Model):
     @api.multi
     def create_single_move(self):
         """ Similar to create_move() but used for case Grouping
-            This method will always use today as posting date !!!
+            - This method will always use today as posting date!
+            - Will use data of first asset to process, as it will merge lines!
         """
+        # TODO: currently, we only group all depreciation line of same group
+        # into 1 JE. But still pending merge multiple lines into 1 line for
+        # performance boost (will not able to assign asset id to move line)
         ctx = dict(self._context,
                    account_period_prefer_normal=True,
                    company_id=self.env.user.company_id.id,
@@ -273,6 +277,7 @@ class AccountAssetLine(models.Model):
         assets = self.env['account.asset'].browse(list(set(asset_ids)))
         if not assets:
             return []
+        # Use data of the first asset, to get accounting information.
         asset = assets[0]
         journal = asset.profile_id.journal_id
         depr_acc = asset.profile_id.account_depreciation_id
