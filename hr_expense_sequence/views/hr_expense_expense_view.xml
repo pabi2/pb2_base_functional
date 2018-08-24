@@ -8,7 +8,7 @@
             <field name="inherit_id" ref="hr_expense.view_expenses_tree"/>
             <field name="arch" type="xml">
                 <field name="employee_id" position="before">
-                    <field name="number" readonly="1"/>
+                    <field name="number"/>
                 </field>
             </field>
         </record>
@@ -32,7 +32,7 @@
                 <xpath expr="//sheet/group" position="before">
                     <h1>
                         <label string="Expense "/>
-                        <field name="number" class="oe_inline"/>
+                        <field name="number" readonly="1" class="oe_inline"/>
                     </h1>
                 </xpath>
             </field>
