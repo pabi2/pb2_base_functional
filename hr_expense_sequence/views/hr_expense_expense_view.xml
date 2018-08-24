@@ -8,7 +8,7 @@
             <field name="inherit_id" ref="hr_expense.view_expenses_tree"/>
             <field name="arch" type="xml">
                 <field name="employee_id" position="before">
-                    <field name="number"/>
+                    <field name="number" readonly="1"/>
                 </field>
             </field>
         </record>
