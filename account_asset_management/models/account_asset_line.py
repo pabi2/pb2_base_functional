@@ -260,7 +260,7 @@ class AccountAssetLine(models.Model):
         return created_move_ids
 
     @api.multi
-    def create_single_move(self):
+    def create_single_move(self, depre_date):
         """ Similar to create_move() but used for case Grouping
             - This method will always use today as posting date!
             - Will use data of first asset to process, as it will merge lines!
@@ -272,7 +272,7 @@ class AccountAssetLine(models.Model):
                    account_period_prefer_normal=True,
                    company_id=self.env.user.company_id.id,
                    allow_asset=True, novalidate=True)
-        period = self.env['account.period'].with_context(ctx).find()
+        period = self.env['account.period'].with_context(ctx).find(depre_date)
         asset_ids = [x.asset_id.id for x in self]
         assets = self.env['account.asset'].browse(list(set(asset_ids)))
         if not assets:
@@ -282,10 +282,9 @@ class AccountAssetLine(models.Model):
         journal = asset.profile_id.journal_id
         depr_acc = asset.profile_id.account_depreciation_id
         exp_acc = asset.profile_id.account_expense_depreciation_id
-        depreciation_date = fields.Date.context_today(self)
         am_vals = {
             'name': '/',
-            'date': depreciation_date,
+            'date': depre_date,
             'ref': '??? GRP NAME ???',
             'period_id': period.id,
             'journal_id': journal.id,
@@ -293,10 +292,10 @@ class AccountAssetLine(models.Model):
         move_lines = []
         for line in self:
             aml_d_vals = line._setup_move_line_data(
-                depreciation_date, period, depr_acc, 'depreciation', False)
+                depre_date, period, depr_acc, 'depreciation', False)
             move_lines.append((0, 0, aml_d_vals))
             aml_e_vals = line._setup_move_line_data(
-                depreciation_date, period, exp_acc, 'expense', False)
+                depre_date, period, exp_acc, 'expense', False)
             move_lines.append((0, 0, aml_e_vals))
         # Create Move
         am_vals.update({'line_id': move_lines})

@@ -1067,7 +1067,8 @@ class AccountAsset(models.Model):
         # return (True, False)
 
     @api.multi
-    def _compute_entries(self, period, check_triggers=False, merge_move=False):
+    def _compute_entries(self, period, check_triggers=False,
+                         merge_move=False, merge_date=False):
         # To DO : add ir_cron job calling this method to
         # generate periodical accounting entries
         result = []
@@ -1103,8 +1104,9 @@ class AccountAsset(models.Model):
             _logger.info("Generate merged move for %s depre." %
                          len(depreciations))
             try:
+                # for merge case, use specified date
                 with self._cr.savepoint():
-                    result += depreciations.create_single_move()
+                    result += depreciations.create_single_move(merge_date)
             except Exception:
                 e = exc_info()[0]
                 tb = ''.join(format_exception(*exc_info()))
