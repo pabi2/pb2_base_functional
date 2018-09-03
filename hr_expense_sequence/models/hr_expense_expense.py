@@ -16,6 +16,9 @@ class HrExpense(models.Model):
         readonly=False,
         copy=False,
     )
+    _sql_constraints = [
+        ('number_uniq', 'unique(number)', 'Number must be unique!'),
+    ]
 
     @api.model
     def create(self, vals):
