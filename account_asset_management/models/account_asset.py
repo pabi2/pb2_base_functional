@@ -267,7 +267,7 @@ class AccountAsset(models.Model):
             -- update account_asset
             -- set value_depreciated = c.value_depreciated,
             -- value_residual = c.value_residual
-            -- from (  -- Attemp to update directly via sql, but not works yet
+            -- from (  -- Attempt to update directly via sql, but not work yet
             select a.id asset_id,
                 coalesce(b.value_depreciated, 0.0) value_depreciated,
                 coalesce(b.value_residual,
@@ -492,6 +492,9 @@ class AccountAsset(models.Model):
 
     @api.multi
     def compute_depreciation_board(self):
+        # RECOMPUTE
+        self = self.with_context(recompute=False)
+        # --
         line_obj = self.env['account.asset.line']
         digits = self.env['decimal.precision'].precision_get('Account')
 
@@ -628,7 +631,9 @@ class AccountAsset(models.Model):
                     else:
                         seq -= 1
                 line_i_start = 0
-
+        # RECOMPUTE
+        self.recompute()
+        # --
         return True
 
     def _get_fy_duration(self, fy_id, option='days'):
