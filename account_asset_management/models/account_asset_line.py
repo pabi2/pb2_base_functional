@@ -223,9 +223,15 @@ class AccountAssetLine(models.Model):
         return move_line_data
 
     @api.multi
-    def create_move(self):
+    def create_move(self, return_as_dict=False):
+        Move = self.env['account.move']
+        MoveLine = self.env['account.move.line']
         created_move_ids = []
         asset_ids = []
+        # For return_as_dict, this method will by pass
+        # all move validation for fester move creataion !!!
+        move_dict = {}
+        move_line_dict = {}
         for line in self:
             asset = line.asset_id
             depreciation_date = line.line_date
@@ -235,29 +241,44 @@ class AccountAssetLine(models.Model):
                        allow_asset=True, novalidate=True)
             period = self.env['account.period'].with_context(ctx).find(
                 depreciation_date)
-            am_vals = line._setup_move_data(depreciation_date, period)
-            move = self.env['account.move'].with_context(ctx).create(am_vals)
+
             depr_acc = asset.profile_id.account_depreciation_id
             exp_acc = asset.profile_id.account_expense_depreciation_id
-            aml_d_vals = line._setup_move_line_data(
-                depreciation_date, period, depr_acc, 'depreciation', move.id)
-            self.env['account.move.line'].with_context(ctx).create(aml_d_vals)
-            aml_e_vals = line._setup_move_line_data(
-                depreciation_date, period, exp_acc, 'expense', move.id)
-            self.env['account.move.line'].with_context(ctx).create(aml_e_vals)
-            if move.journal_id.entry_posted:
-                del ctx['novalidate']
-                move.with_context(ctx).post()
-            write_ctx = dict(self._context, allow_asset_line_update=True)
-            line.with_context(write_ctx).write({'move_id': move.id})
-            created_move_ids.append(move.id)
-            asset_ids.append(asset.id)
-        # we re-evaluate the assets to determine if we can close them
-        for asset in self.env['account.asset'].browse(
-                list(set(asset_ids))):
-            if asset.company_id.currency_id.is_zero(asset.value_residual):
-                asset.state = 'close'
-        return created_move_ids
+            if return_as_dict is True:
+                am_vals = line._setup_move_data(depreciation_date, period)
+                aml_d_vals = line._setup_move_line_data(
+                    depreciation_date, period, depr_acc,
+                    'depreciation', False)
+                aml_e_vals = line._setup_move_line_data(
+                    depreciation_date, period, exp_acc,
+                    'expense', False)
+                move_dict[line.id] = [am_vals]
+                move_line_dict[line.id] = [aml_d_vals, aml_e_vals]
+            else:
+                am_vals = line._setup_move_data(depreciation_date, period)
+                move = Move.with_context(ctx).create(am_vals)
+                aml_d_vals = line._setup_move_line_data(
+                    depreciation_date, period, depr_acc,
+                    'depreciation', move.id)
+                MoveLine.with_context(ctx).create(aml_d_vals)
+                aml_e_vals = line._setup_move_line_data(
+                    depreciation_date, period, exp_acc,
+                    'expense', move.id)
+                MoveLine.with_context(ctx).create(aml_e_vals)
+                if move.journal_id.entry_posted:
+                    del ctx['novalidate']
+                    move.with_context(ctx).post()
+                write_ctx = dict(self._context, allow_asset_line_update=True)
+                line.with_context(write_ctx).write({'move_id': move.id})
+                created_move_ids.append(move.id)
+                asset_ids.append(asset.id)
+        # Return based on rreturn type
+        if return_as_dict is False:
+            assets = self.env['account.asset'].browse(list(set(asset_ids)))
+            assets._set_close_asset_zero_value()
+            return created_move_ids
+        else:
+            return (move_dict, move_line_dict)
 
     @api.multi
     def create_single_move(self, depre_date, compound=True):
@@ -314,9 +335,7 @@ class AccountAssetLine(models.Model):
             del ctx['novalidate']
             move.with_context(ctx).post()
         # we re-evaluate the assets to determine if we can close them
-        for asset in assets:
-            if asset.company_id.currency_id.is_zero(asset.value_residual):
-                asset.state = 'close'
+        assets._set_close_asset_zero_value()
         return [move.id]
 
     @api.multi
