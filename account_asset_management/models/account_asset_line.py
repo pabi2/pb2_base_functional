@@ -232,6 +232,7 @@ class AccountAssetLine(models.Model):
         # all move validation for fester move creataion !!!
         move_dict = {}
         move_line_dict = {}
+        periods = {}  # Keep period for performance
         for line in self:
             asset = line.asset_id
             depreciation_date = line.line_date
@@ -239,9 +240,18 @@ class AccountAssetLine(models.Model):
                        account_period_prefer_normal=True,
                        company_id=asset.company_id.id,
                        allow_asset=True, novalidate=True)
-            period = self.env['account.period'].with_context(ctx).find(
-                depreciation_date)
-
+            # Get period
+            period = periods.get(depreciation_date, False)
+            if not period:
+                period = self.env['account.period'].with_context(ctx).find(
+                    depreciation_date)
+                periods.update({depreciation_date: period})
+            # Get pfile
+            period = periods.get(depreciation_date, False)
+            if not period:
+                period = self.env['account.period'].with_context(ctx).find(
+                    depreciation_date)
+                periods.update({depreciation_date: period})
             depr_acc = asset.profile_id.account_depreciation_id
             exp_acc = asset.profile_id.account_expense_depreciation_id
             if return_as_dict is True:

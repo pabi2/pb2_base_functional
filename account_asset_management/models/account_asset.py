@@ -958,7 +958,7 @@ class AccountAsset(models.Model):
                 init_flag = True
             fy_date_start = datetime.strptime(fy.date_start, '%Y-%m-%d')
             fy_date_stop = datetime.strptime(fy.date_stop, '%Y-%m-%d')
-        except:
+        except Exception:
             # The following logic is used when no fiscal year
             # is defined for the asset start date:
             # - We lookup the first fiscal year defined in the system
@@ -1141,15 +1141,26 @@ class AccountAsset(models.Model):
                          "prior to the selected period. "
                          "Please post those entries first!")
             raise UserError(messsage)
-
-        depreciations = asset_line_obj.search([
-            ('asset_id', 'in', self.ids),
-            ('type', '=', 'depreciate'),
-            ('init_entry', '=', False),
-            ('line_date', '<=', period.date_stop),
-            ('line_date', '>=', period.date_start),
-            ('move_check', '=', False)])
-
+        # depreciations = asset_line_obj.search([
+        #     ('asset_id', 'in', self.ids),
+        #     ('type', '=', 'depreciate'),
+        #     ('init_entry', '=', False),
+        #     ('line_date', '<=', period.date_stop),
+        #     ('line_date', '>=', period.date_start),
+        #     ('move_check', '=', False)], limit=1000)
+        depreciations_ids = []
+        asset_ids = self.ids
+        if asset_ids:
+            self._cr.execute("""
+                select id from account_asset_line asl
+                where exists (
+                    select 1 from account_asset
+                    where id = asl.asset_id and id in %s)
+                and type = 'depreciate' and init_entry = false
+                and line_date <= %s and line_date >= %s and move_check = false
+            """, (tuple(asset_ids), period.date_stop, period.date_start))
+            depreciations_ids = [x[0] for x in self._cr.fetchall()]
+        depreciations = asset_line_obj.browse(depreciations_ids)
         # Prepare move_dicts for fast_create_move, which will use bulk import
         if merge_move and fast_create_move:
             raise ValidationError(
@@ -1175,16 +1186,18 @@ class AccountAsset(models.Model):
         else:  # Standard
             if fast_create_move:
                 try:
-                    # for merge case, use specified date
-                    with self._cr.savepoint():
-                        move_dict, move_line_dict = depreciations.\
-                            create_move(return_as_dict=fast_create_move)
-                        # Create moves, without ORM
-                        result += self._fast_create_move(move_dict,
-                                                         move_line_dict)
-                        # recompute
-                        self._compute_depreciation()
-                        self._set_close_asset_zero_value()
+                    # create_move will return only dict
+                    move_dict, move_line_dict = depreciations.\
+                        create_move(return_as_dict=fast_create_move)
+                    # Create moves, without ORM
+                    result += self._fast_create_move(move_dict,
+                                                     move_line_dict)
+                    # NOTE: for fast create move, folloiwng 2 methods is not
+                    # called yet. It will be called by batch document, as
+                    # it won't be linked or marked account_asset_line yet.
+                    # --
+                    # self._compute_depreciation()
+                    # self._set_close_asset_zero_value()
                 except Exception:
                     error_msg = _("Error while processing fast asset compute")
                     _logger.error("%s, %s", self._name, error_msg)
@@ -1281,6 +1294,7 @@ class AccountAsset(models.Model):
                     select max(id) from account_move where ref = %s
                 """, (str(depre_line_id), ))
                 group_move_id = self._cr.fetchone()[0]
+        self._cr.commit()  # must commit, otherwise it will lock table
         # After done all the record creation, now link line and move
         self._cr.execute("""
             update account_move_line aml set move_id = (
@@ -1288,14 +1302,6 @@ class AccountAsset(models.Model):
                 and narration = %s)
             where aml.move_id = %s
         """, (group_uuid, group_move_id))
-        # Set move_id to depre line
-        self._cr.execute("""
-            update account_asset_line asl set move_id = (
-                select id from account_move where ref = cast(asl.id as varchar)
-                and narration = %s), move_check = true
-            where exists (select 1 from account_move where ref =
-                          cast(asl.id as varchar) and narration = %s)
-        """, (group_uuid, group_uuid))
         # All move_ids
         self._cr.execute("""
             select id from account_move where narration = %s
