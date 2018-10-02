@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2009-2017 Noviat
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+import time
 import uuid
 import csv
 import cStringIO
@@ -1120,8 +1121,6 @@ class AccountAsset(models.Model):
     def _compute_entries(self, period, check_triggers=False,
                          merge_move=False, merge_date=False,
                          fast_create_move=False):
-        # To DO : add ir_cron job calling this method to
-        # generate periodical accounting entries
         result = []
         error_log = []
         asset_line_obj = self.env['account.asset.line']
@@ -1168,7 +1167,7 @@ class AccountAsset(models.Model):
         # Special case merge into 1 move
         if merge_move:
             _logger.info("Generate merged move for %s depre." %
-                         len(depreciations))
+                         len(depreciations_ids))
             try:
                 # for merge case, use specified date
                 with self._cr.savepoint():
@@ -1185,13 +1184,24 @@ class AccountAsset(models.Model):
                 _logger.error("%s, %s", self._name, error_msg)
         else:  # Standard
             if fast_create_move:
+                _logger.info("Begin fast create move for %s depre." %
+                             len(depreciations_ids))
                 try:
+                    _logger.info("Begin create_move() for %s depre." %
+                                 len(depreciations_ids))
                     # create_move will return only dict
+                    s = time.time()
                     move_dict, move_line_dict = depreciations.\
                         create_move(return_as_dict=fast_create_move)
+                    _logger.info("Begin create_move() in %s secs." %
+                                 (time.time()-s))
+                    _logger.info("Begin _fast_create_move()")
                     # Create moves, without ORM
+                    s = time.time()
                     result += self._fast_create_move(move_dict,
                                                      move_line_dict)
+                    _logger.info("End _fast_create_move() in %s secs." %
+                                 (time.time()-s))
                     # NOTE: for fast create move, folloiwng 2 methods is not
                     # called yet. It will be called by batch document, as
                     # it won't be linked or marked account_asset_line yet.
@@ -1286,8 +1296,11 @@ class AccountAsset(models.Model):
             else:
                 return False
             data_csv.seek(0)
+            s = time.time()
             self._cr.copy_expert("copy %s (%s) from STDIN CSV HEADER" %
                                  (table_name, columns), data_csv)
+            _logger.info("Done insert %s rows into table %s in %s secs." %
+                         (len(data_list), table_name, (time.time()-s)))
             # Find latest move_id, to use temporarilly
             if table_name == 'account_move':
                 self._cr.execute("""
@@ -1296,12 +1309,15 @@ class AccountAsset(models.Model):
                 group_move_id = self._cr.fetchone()[0]
         self._cr.commit()  # must commit, otherwise it will lock table
         # After done all the record creation, now link line and move
+        s = time.time()
         self._cr.execute("""
             update account_move_line aml set move_id = (
                 select id from account_move where ref = aml.ref
                 and narration = %s)
             where aml.move_id = %s
         """, (group_uuid, group_move_id))
+        _logger.info("Done linking move and move_line in %s secs." %
+                     (time.time()-s))
         # All move_ids
         self._cr.execute("""
             select id from account_move where narration = %s
