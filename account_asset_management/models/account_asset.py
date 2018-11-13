@@ -115,7 +115,9 @@ class AccountAsset(models.Model):
              "the asset goes into the 'Close' status.\n"
              "When the removal entries are generated, "
              "the asset goes into the 'Removed' status.")
-    active = fields.Boolean(default=True)
+    active = fields.Boolean(
+        default=True,
+        index=True)
     partner_id = fields.Many2one(
         comodel_name='res.partner', string='Partner', readonly=True,
         states={'draft': [('readonly', False)]})
@@ -196,7 +198,8 @@ class AccountAsset(models.Model):
     company_id = fields.Many2one(
         comodel_name='res.company',
         string='Company', required=True, readonly=True,
-        default=lambda self: self._default_company_id())
+        default=lambda self: self._default_company_id(),
+        index=True)
     company_currency_id = fields.Many2one(
         comodel_name='res.currency',
         related='company_id.currency_id',
