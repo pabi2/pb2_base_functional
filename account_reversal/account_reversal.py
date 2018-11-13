@@ -37,7 +37,9 @@ class account_move(models.Model):
         'account.move',
         'Reversal Entry',
         ondelete='set null',
-        readonly=True)
+        readonly=True,
+        copy=False,
+        )
 
     @api.multi
     def validate(self):
