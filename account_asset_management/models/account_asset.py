@@ -262,7 +262,7 @@ class AccountAsset(models.Model):
                  'depreciation_line_ids.amount',
                  'depreciation_line_ids.previous_id',
                  'depreciation_line_ids.init_entry',
-                 'depreciation_line_ids.move_id')
+                 'depreciation_line_ids.move_check')
     def _compute_depreciation(self):
         asset_dict = {}
         asset_ids = self.ids

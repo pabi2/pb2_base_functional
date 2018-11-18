@@ -90,7 +90,7 @@ class AccountMoveLine(models.Model):
                 'name': vals['name'],
                 'profile_id': vals['asset_profile_id'],
                 'purchase_value': depreciation_base,
-                'partner_id': vals['partner_id'],
+                'partner_id': vals.get('partner_id', False),
                 'date_start': move.date,
             }
             if self._context.get('company_id'):
