@@ -81,6 +81,10 @@ class AccountMoveLine(models.Model):
                 _("You are not allowed to link "
                   "an accounting entry to an asset."
                   "\nYou should generate such entries from the asset."))
+        # HOOK
+        if self._context.get('force_no_asset_profile', False):
+            vals['asset_profile_id'] = False
+        # --
         if vals.get('asset_profile_id'):
             # create asset
             asset_obj = self.env['account.asset']
