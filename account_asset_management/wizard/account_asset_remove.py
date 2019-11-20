@@ -145,7 +145,6 @@ class AccountAssetRemove(models.TransientModel):
             residual_value = self._prepare_early_removal(asset)
         else:
             residual_value = asset.value_residual
-
         ctx = dict(self._context, company_id=asset.company_id.id)
         period_id = self.period_id.id
         if not period_id:
@@ -284,6 +283,7 @@ class AccountAssetRemove(models.TransientModel):
             move_line_vals = {
                 'name': asset.name,
                 'account_id': profile.account_depreciation_id.id,
+                'analytic_account_id': asset.account_analytic_id.id,
                 'debit': depr_amount > 0 and depr_amount or 0.0,
                 'credit': depr_amount < 0 and -depr_amount or 0.0,
                 'partner_id': partner_id,
@@ -294,10 +294,11 @@ class AccountAssetRemove(models.TransientModel):
         move_line_vals = {
             'name': asset.name,
             'account_id': profile.account_asset_id.id,
-            'debit': (asset.depreciation_base < 0 and -asset
-                      .depreciation_base or 0.0),
-            'credit': (asset.depreciation_base > 0 and asset
-                       .depreciation_base or 0.0),
+            'analytic_account_id': asset.account_analytic_id.id,
+            'debit': (asset.purchase_value < 0 and -asset
+                      .purchase_value or 0.0),
+            'credit': (asset.purchase_value > 0 and asset
+                       .purchase_value or 0.0),
             'partner_id': partner_id,
             'asset_id': asset.id
         }
@@ -328,7 +329,8 @@ class AccountAssetRemove(models.TransientModel):
                         'asset_id': asset.id
                     }
                     move_lines.append((0, 0, move_line_vals))
-                balance = self.sale_value - residual_value
+                balance = \
+                    self.sale_value - residual_value - asset.salvage_value
                 account_id = (self.account_plus_value_id.id
                               if balance > 0
                               else self.account_min_value_id.id)
