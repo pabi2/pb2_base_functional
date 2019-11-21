@@ -283,7 +283,7 @@ class AccountAssetRemove(models.TransientModel):
             move_line_vals = {
                 'name': asset.name,
                 'account_id': profile.account_depreciation_id.id,
-                # 'analytic_account_id': asset.account_analytic_id.id,
+                'analytic_account_id': asset.account_analytic_id.id,
                 'debit': depr_amount > 0 and depr_amount or 0.0,
                 'credit': depr_amount < 0 and -depr_amount or 0.0,
                 'partner_id': partner_id,
@@ -294,15 +294,11 @@ class AccountAssetRemove(models.TransientModel):
         move_line_vals = {
             'name': asset.name,
             'account_id': profile.account_asset_id.id,
-            'debit': (asset.depreciation_base < 0 and -asset
-                      .depreciation_base or 0.0),
-            'credit': (asset.depreciation_base > 0 and asset
-                       .depreciation_base or 0.0),
-            # 'analytic_account_id': asset.account_analytic_id.id,
-            # 'debit': (asset.purchase_value < 0 and -asset
-            #           .purchase_value or 0.0),
-            # 'credit': (asset.purchase_value > 0 and asset
-            #            .purchase_value or 0.0),
+            'analytic_account_id': asset.account_analytic_id.id,
+            'debit': (asset.purchase_value < 0 and -asset
+                      .purchase_value or 0.0),
+            'credit': (asset.purchase_value > 0 and asset
+                       .purchase_value or 0.0),
             'partner_id': partner_id,
             'asset_id': asset.id
         }
@@ -333,9 +329,8 @@ class AccountAssetRemove(models.TransientModel):
                         'asset_id': asset.id
                     }
                     move_lines.append((0, 0, move_line_vals))
-                balance = self.sale_value - residual_value
-                # balance = \
-                #     self.sale_value - residual_value - asset.salvage_value
+                balance = \
+                    self.sale_value - residual_value - asset.salvage_value
                 account_id = (self.account_plus_value_id.id
                               if balance > 0
                               else self.account_min_value_id.id)
