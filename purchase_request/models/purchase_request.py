@@ -18,9 +18,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-from openerp import api, fields, models
+from openerp import api, fields, models, _
 import time
 import openerp.addons.decimal_precision as dp
+from openerp.exceptions import ValidationError
+
 _STATES = [
     ('draft', 'Draft'),
     ('to_approve', 'To be approved'),
@@ -249,6 +251,11 @@ class PurchaseRequestLine(models.Model):
     procurement_id = fields.Many2one('procurement.order',
                                      'Procurement Order',
                                      readonly=True)
+
+    @api.constrains('product_qty')
+    def _check_product_qty(self):
+        if self.product_qty < 0:
+            raise ValidationError(_('The Product Quantity must be positive!'))
 
     @api.onchange('product_id', 'product_uom_id')
     def onchange_product_id(self):
