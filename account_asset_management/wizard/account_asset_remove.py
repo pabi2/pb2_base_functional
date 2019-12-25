@@ -218,7 +218,7 @@ class AccountAssetRemove(models.TransientModel):
         Generate last depreciation entry on the day before the removal date.
         """
         date_remove = self.date_remove
-        asset_line_obj = self.env['account.asset.line']
+        # asset_line_obj = self.env['account.asset.line']
 
         digits = self.env['decimal.precision'].precision_get('Account')
 
@@ -242,29 +242,37 @@ class AccountAssetRemove(models.TransientModel):
                 _("You can't make an early removal if all the depreciation "
                   "lines for previous periods are not posted."))
 
-        if first_to_depreciate_dl.previous_id:
-            last_depr_date = first_to_depreciate_dl.previous_id.line_date
-        else:
-            create_dl = asset_line_obj.search(
-                [('asset_id', '=', asset.id), ('type', '=', 'create')])
-            last_depr_date = create_dl.line_date
-
-        period_number_days = (
-            datetime.strptime(first_date, '%Y-%m-%d') -
-            datetime.strptime(last_depr_date, '%Y-%m-%d')).days
+        # if first_to_depreciate_dl.previous_id:
+        #     last_depr_date = first_to_depreciate_dl.previous_id.line_date
+        # else:
+        #     create_dl = asset_line_obj.search(
+        #         [('asset_id', '=', asset.id), ('type', '=', 'create')])
+        #     last_depr_date = create_dl.line_date
+        # period_number_days = (
+        #     datetime.strptime(first_date, '%Y-%m-%d') -
+        #     datetime.strptime(last_depr_date, '%Y-%m-%d')).days
         date_remove = datetime.strptime(date_remove, '%Y-%m-%d')
         new_line_date = date_remove + relativedelta(days=-1)
-        to_depreciate_days = (
-            new_line_date -
-            datetime.strptime(last_depr_date, '%Y-%m-%d')).days
-        to_depreciate_amount = round(
-            float(to_depreciate_days) / float(period_number_days) *
-            first_to_depreciate_dl.amount, digits)
+        # to_depreciate_days = (
+        #     new_line_date -
+        #     datetime.strptime(last_depr_date, '%Y-%m-%d')).days
+        asset_line_check = \
+            asset.depreciation_line_ids.filtered(lambda l: l.move_check)
+        last_line_check = \
+            fields.Datetime.from_string(asset_line_check[-1].line_date)
+        days = (new_line_date - last_line_check).days
+        # to_depreciate_amount = round(
+        #     float(to_depreciate_days) / float(period_number_days) *
+        #     first_to_depreciate_dl.amount, digits)
+        days_all = sum(asset.depreciation_line_ids.mapped('line_days'))
+        day_amount = round(asset.depreciation_base / days_all, digits)
+        to_depreciate_amount = day_amount * days
         residual_value = asset.value_residual - to_depreciate_amount
         if to_depreciate_amount:
             update_vals = {
                 'amount': to_depreciate_amount,
-                'line_date': new_line_date
+                'line_date': new_line_date,
+                'line_days': days,
             }
             first_to_depreciate_dl.write(update_vals)
             dlines[0].create_move()
