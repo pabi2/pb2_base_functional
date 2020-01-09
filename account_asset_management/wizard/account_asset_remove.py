@@ -248,7 +248,6 @@ class AccountAssetRemove(models.TransientModel):
             create_dl = asset_line_obj.search(
                 [('asset_id', '=', asset.id), ('type', '=', 'create')])
             last_depr_date = create_dl.line_date
-
         period_number_days = (
             datetime.strptime(first_date, '%Y-%m-%d') -
             datetime.strptime(last_depr_date, '%Y-%m-%d')).days
@@ -257,6 +256,18 @@ class AccountAssetRemove(models.TransientModel):
         to_depreciate_days = (
             new_line_date -
             datetime.strptime(last_depr_date, '%Y-%m-%d')).days
+        asset_line_check = \
+            asset.depreciation_line_ids.filtered(lambda l: l.move_check)
+        last_line_check = \
+            fields.Datetime.from_string(asset_line_check[-1].line_date)
+        # condition : depreciation or not
+        days = (new_line_date - last_line_check).days
+        if not first_to_depreciate_dl.previous_id:
+            # never run asset line
+            days += 1
+            to_depreciate_days += 1
+            period_number_days += 1
+
         to_depreciate_amount = round(
             float(to_depreciate_days) / float(period_number_days) *
             first_to_depreciate_dl.amount, digits)
@@ -264,7 +275,8 @@ class AccountAssetRemove(models.TransientModel):
         if to_depreciate_amount:
             update_vals = {
                 'amount': to_depreciate_amount,
-                'line_date': new_line_date
+                'line_date': new_line_date,
+                'line_days': days,
             }
             first_to_depreciate_dl.write(update_vals)
             dlines[0].create_move()
