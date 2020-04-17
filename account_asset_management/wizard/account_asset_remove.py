@@ -195,7 +195,11 @@ class AccountAssetRemove(models.TransientModel):
             'type': 'remove',
         }
         asset_line_obj.create(asset_line_vals)
-        asset.write({'state': 'removed', 'date_remove': self.date_remove})
+        asset.write({
+            'state': 'removed',
+            'date_remove': self.date_remove,
+            'active': False,
+        })
 
         # create move lines
         move_lines = self._get_removal_data(asset, residual_value)
@@ -356,4 +360,30 @@ class AccountAssetRemove(models.TransientModel):
                     'asset_id': asset.id
                 }
                 move_lines.append((0, 0, move_line_vals))
+
+        # case asset action removel and unbalanced journal
+        diff = asset.purchase_value - depr_amount
+        if diff and not residual_value:
+            if self.posting_regime == 'residual_value':
+                move_line_vals = {
+                    'name': self.account_residual_value_id.name,
+                    'account_id': self.account_residual_value_id.id,
+                    'analytic_account_id': asset.account_analytic_id.id,
+                    'debit': diff > 0.0 and diff or 0.0,
+                    'credit': diff < 0.0 and diff or 0.0,
+                    'partner_id': partner_id,
+                    'asset_id': asset.id
+                }
+            elif self.posting_regime == 'gain_loss_on_sale':
+                move_line_vals = {
+                    'name': self.account_plus_value_id.name,
+                    'account_id': diff > 0.0 and self.account_min_value_id.id
+                    or self.account_plus_value_id.id,
+                    'analytic_account_id': asset.account_analytic_id.id,
+                    'debit': diff > 0.0 and diff or 0.0,
+                    'credit': diff < 0.0 and diff or 0.0,
+                    'partner_id': partner_id,
+                    'asset_id': asset.id
+                }
+            move_lines.append((0, 0, move_line_vals))
         return move_lines
