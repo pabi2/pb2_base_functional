@@ -194,31 +194,37 @@ class PurchaseRequestLine(models.Model):
     product_id = fields.Many2one(
         'product.product', 'Product',
         domain=[('purchase_ok', '=', True)],
+        index=True,
         track_visibility='onchange')
     name = fields.Char('Description', size=256,
                        track_visibility='onchange')
-    product_uom_id = fields.Many2one('product.uom', 'Product Unit of Measure',
-                                     track_visibility='onchange')
+    product_uom_id = fields.Many2one(
+        'product.uom', 'Product Unit of Measure', index=True,
+        track_visibility='onchange')
     product_qty = fields.Float('Quantity', track_visibility='onchange',
                                digits_compute=dp.get_precision(
                                    'Product Unit of Measure'))
     request_id = fields.Many2one('purchase.request',
                                  'Purchase Request',
-                                 ondelete='cascade', readonly=True)
+                                 ondelete='cascade', index=True, readonly=True)
     company_id = fields.Many2one('res.company',
                                  related='request_id.company_id',
                                  string='Company',
+                                 index=True,
                                  store=True, readonly=True)
     analytic_account_id = fields.Many2one('account.analytic.account',
                                           'Analytic Account',
+                                          index=True,
                                           track_visibility='onchange')
     requested_by = fields.Many2one('res.users',
                                    related='request_id.requested_by',
                                    string='Requested by',
+                                   index=True,
                                    store=True, readonly=True)
     assigned_to = fields.Many2one('res.users',
                                   related='request_id.assigned_to',
                                   string='Assigned to',
+                                  index=True,
                                   store=True, readonly=True)
     date_start = fields.Date(related='request_id.date_start',
                              string='Request Date', readonly=True,
@@ -248,6 +254,7 @@ class PurchaseRequestLine(models.Model):
 
     procurement_id = fields.Many2one('procurement.order',
                                      'Procurement Order',
+                                     index=True,
                                      readonly=True)
 
     @api.onchange('product_id', 'product_uom_id')
