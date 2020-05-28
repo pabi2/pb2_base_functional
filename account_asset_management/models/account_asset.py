@@ -595,7 +595,10 @@ class AccountAsset(models.Model):
                 residual_amount = asset.depreciation_base - depreciated_value
                 amount_diff = round(
                     residual_amount_table - residual_amount, digits)
-                if amount_diff:
+                asset_line_init = asset.depreciation_line_ids.filtered(
+                    lambda l: l.init_entry)
+                # not diff when import init_entry > 1
+                if amount_diff and len(asset_line_init) == 1:
                     # compensate in first depreciation entry
                     # after last posting
                     line = table[table_i_start]['lines'][line_i_start]
@@ -875,7 +878,6 @@ class AccountAsset(models.Model):
 
                 if round(remaining_value, digits) == 0.0:
                     break
-
                 if (line_date > min(entry['date_stop'],
                                     depreciation_stop_date) and not
                         (i == i_max and li == li_max)):
@@ -937,7 +939,6 @@ class AccountAsset(models.Model):
                         'remaining_value': remaining_value,
                     })
                     depreciated_value -= diff
-
             if not lines:
                 table.pop(i)
             else:
