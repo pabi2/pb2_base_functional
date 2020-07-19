@@ -567,6 +567,9 @@ class AccountAsset(models.Model):
                           "posted depreciation table entry dates."))
 
                 for table_i, entry in enumerate(table):
+                    # skip if duplicate date
+                    if not entry.get('lines', False):
+                        continue
                     residual_amount_table = \
                         entry['lines'][-1]['remaining_value']
                     if entry['date_start'] <= last_depreciation_date \
