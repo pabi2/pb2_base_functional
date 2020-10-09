@@ -47,7 +47,7 @@ class PurchaseOrderLine(models.Model):
     def _compute_all_invoices_approved(self):
         if self.invoice_lines:
             self.all_invoices_approved = \
-                not any(inv_line.invoice_id.state in ['draft', 'cancel']
+                not any(inv_line.invoice_id.state == 'draft'
                         for inv_line in self.invoice_lines)
         else:
             self.all_invoices_approved = False
